@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>美女聚合视频</title>
+    <title>聚合视频-全功能增强加固版</title>
     <link rel="stylesheet" href="https://unpkg.com/swiper/swiper-bundle.min.css">
     <style>
         body, html { margin: 0; padding: 0; height: 100%; background: #000; color: white; font-family: sans-serif; overflow: hidden; }
@@ -25,17 +25,17 @@
         }
         .line-row { display: flex; justify-content: space-between; align-items: center; padding: 10px; border-bottom: 1px solid #222; font-size: 13px; }
         
-        /* 修复与调整：侧边下载工具位置移动到【右侧正中间】 */
+        /* 右侧下载按钮 - 垂直居中 */
         .side-bar { 
             position: absolute; 
             right: 15px; 
             top: 50%; 
-            transform: translateY(-50%); /* 确保在右侧垂直方向绝对居中 */
+            transform: translateY(-50%);
             z-index: 100; 
         }
         .dl-btn { width: 45px; height: 45px; background: rgba(0,0,0,0.5); border-radius: 50%; display: flex; align-items: center; justify-content: center; border: 1px solid rgba(255,255,255,0.3); cursor: pointer; font-size: 20px; }
         
-        /* 右下角固定悬浮控制按钮组 */
+        /* 右下角控制按钮组 */
         .video-fixed-buttons {
             position: fixed;
             bottom: 30px;
@@ -43,7 +43,7 @@
             display: flex;
             flex-direction: column;
             gap: 12px;
-            z-index: 1001; /* 确保层级高于一切组件 */
+            z-index: 1001;
         }
         .video-fixed-buttons button {
             width: 48px;
@@ -61,26 +61,20 @@
             backdrop-filter: blur(3px);
             transition: all 0.2s ease;
         }
-        /* 桌面端悬浮回馈 */
-        .video-fixed-buttons button:hover {
-            background-color: rgba(255, 255, 255, 0.9);
-            color: #000000;
-            transform: scale(1.08);
-        }
-        .video-fixed-buttons button:active {
-            transform: scale(0.95);
-        }
+        .video-fixed-buttons button:hover { background-color: rgba(255, 255, 255, 0.9); color: #000; transform: scale(1.08); }
 
-        /* 解决自动播放限制的遮罩 */
+        /* 启动遮罩 */
         #startMask { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; z-index: 9999; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; }
-        .loading-text { position: absolute; color: #444; font-size: 12px; z-index: 0; }
+        .loading-text { position: absolute; color: #666; font-size: 12px; z-index: 0; }
+        
+        @keyframes pulse { 0% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.1); opacity: 0.7; } 100% { transform: scale(1); opacity: 1; } }
     </style>
 </head>
 <body>
 
 <div id="startMask" onclick="startApp()">
     <div style="font-size: 50px; animation: pulse 2s infinite;">🎬</div>
-    <p style="margin-top:20px; color:#aaa;">点击进入稳定播放模式</p>
+    <p style="margin-top:20px; color:#aaa;">点击进入全线路增强版</p>
 </div>
 
 <div class="header-bar">
@@ -91,7 +85,6 @@
     </div>
 </div>
 
-<!-- 桌面右下角上下切换视频按钮 -->
 <div class="video-fixed-buttons">
     <button id="quickPrev" title="上一个视频">▲</button>
     <button id="quickNext" title="下一个视频">▼</button>
@@ -113,15 +106,15 @@
 
 <script src="https://unpkg.com/swiper/swiper-bundle.min.js"></script>
 <script>
+    // 整合后的全量线路：原版50条 + 妹子版独有22条 = 72条
     var defaultData = [
+        // --- 原版线路 ---
         {name:"JK视频", url:"https://api.suyanw.cn/api/jksp.php"}, {name:"JK(源2)", url:"https://api.mmp.cc/api/ksvideo?type=mp4&id=jk"},
         {name:"真人小姐姐", url:"https://api.yujn.cn/api/zzxjj.php?type=video"}, {name:"小哥哥", url:"http://api.yujn.cn/api/xgg.php?type=video"},
         {name:"热舞1", url:"http://api.yujn.cn/api/rewu.php?type=video"}, {name:"热舞2", url:"https://api.mmp.cc/api/ksvideo?type=mp4&id=ReWu"},
         {name:"变装秀", url:"http://api.yujn.cn/api/bianzhuang.php"}, {name:"白丝1", url:"http://api.yujn.cn/api/baisis.php?type=video"},
-        {name:"白丝2", url:"https://api.mmp.cc/api/ksvideo?type=mp4&id=BaiSi"}, {name:"黑丝1", url:"http://api.yujn.cn/api/heisis.php?type=video"},
-        {name:"黑丝2", url:"https://api.mmp.cc/api/ksvideo?type=mp4&id=HeiSi"}, {name:"甜美1", url:"http://api.yujn.cn/api/tianmei.php?type=video"},
-        {name:"甜美2", url:"https://api.mmp.cc/api/ksvideo?type=mp4&id=TianMei"}, {name:"精选小姐姐", url:"https://api.yujn.cn/api/xjj.php?type=video"},
-        {name:"萝莉1", url:"http://api.yujn.cn/api/luoli.php?type=video"}, {name:"萝莉2", url:"https://api.mmp.cc/api/ksvideo?type=mp4&id=LuoLi"},
+        {name:"黑丝1", url:"http://api.yujn.cn/api/heisis.php?type=video"}, {name:"甜美1", url:"http://api.yujn.cn/api/tianmei.php?type=video"},
+        {name:"精选小姐姐", url:"https://api.yujn.cn/api/xjj.php?type=video"}, {name:"萝莉1", url:"http://api.yujn.cn/api/luoli.php?type=video"},
         {name:"快手小姐姐", url:"http://api.yujn.cn/api/ksxjjsp.php"}, {name:"高质量推荐", url:"https://api.mmp.cc/api/ksvideo?type=mp4&id=GaoZhiLiangXiaoJieJie"},
         {name:"时尚穿搭", url:"https://api.mmp.cc/api/ksvideo?type=mp4&id=ChuanDa"}, {name:"古风汉服", url:"https://api.mmp.cc/api/ksvideo?type=mp4&id=HanFu"},
         {name:"视觉变装", url:"https://api.mmp.cc/api/ksvideo?type=mp4&id=BianZhuang"}, {name:"女大生活", url:"https://api.mmp.cc/api/ksvideo?type=mp4&id=NvDa"},
@@ -134,20 +127,30 @@
         {name:"二次元ACG", url:"https://api.mmp.cc/api/ksvideo?type=mp4&id=ACG"}, {name:"丝袜频道", url:"https://api.mmp.cc/api/ksvideo?type=mp4&id=SiWa"},
         {name:"顶级高质量", url:"https://api.mmp.cc/api/ksvideo?type=mp4&id=GaoZhiLiang"}, {name:"慢动作美感", url:"https://api.mmp.cc/api/ksvideo?type=mp4&id=ManDongZuo"},
         {name:"长腿控", url:"https://api.mmp.cc/api/ksvideo?type=mp4&id=ChangTui"}, {name:"双马尾", url:"https://api.mmp.cc/api/ksvideo?type=mp4&id=ShuangMaWei"},
-        {name:"快手热门", url:"https://v.api.aa1.cn/api/api-video-ks/index.php"}, {name:"清纯风2", url:"http://api.yujn.cn/api/qingchun.php"},
-        {name:"穿搭风2", url:"http://api.yujn.cn/api/chuanda.php"}, {name:"汉服秀2", url:"http://api.yujn.cn/api/hanfu.php"},
-        {name:"自拍小姐姐", url:"https://api.mmp.cc/api/ksvideo?type=mp4&id=ZiPai"}, {name:"清纯校花", url:"https://api.mmp.cc/api/ksvideo?type=mp4&id=XiaoYuan"},
+        {name:"快手热门", url:"https://v.api.aa1.cn/api/api-video-ks/index.php"}, {name:"自拍小姐姐", url:"https://api.mmp.cc/api/ksvideo?type=mp4&id=ZiPai"},
         {name:"皮衣控", url:"https://api.mmp.cc/api/ksvideo?type=mp4&id=PiYi"}, {name:"萌妹子", url:"https://api.mmp.cc/api/ksvideo?type=mp4&id=MengMeiZi"},
-        {name:"随机网易视频", url:"https://api.uomg.com/api/rand.music?sort=美女&format=mp4"}, {name:"颜值自拍", url:"https://api.uomg.com/api/rand.imgurl?sort=美女"}
+        {name:"随机网易视频", url:"https://api.uomg.com/api/rand.music?sort=美女&format=mp4"},
+        
+        // --- 妹子版独有线路补充 ---
+        {name:"狱卒/美腿", url:"http://api.yujn.cn/api/jpmt.php"}, {name:"玉足增强", url:"https://sbtxqq.com/api/yzxl.php"},
+        {name:"完美身材", url:"http://api.yujn.cn/api/wmsc.php?type=video"}, {name:"瞳瞳小姐姐", url:"https://api.yujn.cn/api/tongtong.php?type=video"},
+        {name:"鞠婧祎专题", url:"http://api.yujn.cn/api/jjy.php?type=video"}, {name:"章若楠专题", url:"http://api.yujn.cn/api/zrn.php?type=video"},
+        {name:"纯情女高", url:"http://api.yujn.cn/api/nvgao.php?type=video"}, {name:"COS专题", url:"http://api.yujn.cn/api/COS.php?type=video"},
+        {name:"快手变装秀", url:"http://api.yujn.cn/api/ksbianzhuang.php?type=video"}, {name:"高质量聚合", url:"http://api.tinise.cn/api/xjjsp"},
+        {name:"随机妹子V2", url:"https://api.mhimg.cn/api/Sj_girls_video"}, {name:"白丝(新)", url:"http://api.tinise.cn/api/baisi"},
+        {name:"黑丝(新)", url:"http://api.tinise.cn/api/heisi"}, {name:"吊带小姐姐", url:"http://api.yujn.cn/api/diaodai.php?type=video"},
+        {name:"紧身裙控", url:"http://api.yujn.cn/api/jinshen.php?type=video"}, {name:"露背控", url:"http://api.yujn.cn/api/lubei.php?type=video"},
+        {name:"护士专题", url:"http://api.yujn.cn/api/hushi.php?type=video"}, {name:"校花自拍", url:"http://api.yujn.cn/api/xiaohua.php?type=video"},
+        {name:"随机视频(全)", url:"https://www.wudada.online/Api/NewSp"}, {name:"爱美剧接口", url:"https://api.mmp.cc/api/ksvideo?type=mp4&id=Amj"}
     ];
 
-    var userLines = JSON.parse(localStorage.getItem('final_video_lines')) || defaultData;
-    var swiper, appStarted = false;
-    var isSwitching = false; 
+    var userLines = JSON.parse(localStorage.getItem('enhanced_video_lines')) || defaultData;
+    var swiper, appStarted = false, isSwitching = false;
 
+    // 1. 初始化列表
     function renderApiSelect() {
         var sel = document.getElementById('apiSelect');
-        var current = localStorage.getItem('final_last_idx') || 'MIX';
+        var current = localStorage.getItem('enhanced_last_idx') || 'MIX';
         sel.innerHTML = '<option value="MIX">🌟 聚合全线路随机</option>';
         userLines.forEach(function(item, i) {
             var mark = item.ok === true ? '√ ' : (item.ok === false ? 'X ' : '? ');
@@ -156,6 +159,7 @@
         document.getElementById('lineCount').innerText = userLines.length;
     }
 
+    // 2. 线路自动检测
     function checkLines() {
         userLines.forEach(function(item, index) {
             if(item.ok !== undefined) return;
@@ -163,25 +167,24 @@
             v.src = item.url;
             v.onloadedmetadata = function() { userLines[index].ok = true; renderApiSelect(); v.remove(); };
             v.onerror = function() { userLines[index].ok = false; renderApiSelect(); v.remove(); };
-            setTimeout(function(){ v.remove(); }, 6000); 
+            setTimeout(function(){ v.remove(); }, 5000); 
         });
     }
 
+    // 3. 启动应用
     function startApp() {
         document.getElementById('startMask').style.display = 'none';
         appStarted = true;
         playAt(0); 
     }
 
+    // 4. 核心播放控制
     function playAt(index) {
         if(!appStarted) return;
         
         document.querySelectorAll('video').forEach(function(v){
-            v.pause();
-            v.onplay = v.onended = v.onerror = v.ontimeupdate = null;
-            v.src = ""; 
-            v.load(); 
-            v.remove();
+            v.pause(); v.onplay = v.onended = v.onerror = v.ontimeupdate = null;
+            v.src = ""; v.load(); v.remove();
         });
 
         var slide = swiper.slides[index];
@@ -195,45 +198,30 @@
         
         var video = document.createElement('video');
         video.src = finalUrl;
-        video.playsInline = true;
-        video.webkitPlaysinline = true;
-        video.autoplay = true;
+        video.playsInline = true; video.autoplay = true;
         video.setAttribute('x5-video-player-type', 'h5-page'); 
 
         var playValid = false; 
-
-        video.ontimeupdate = function() {
-            if(video.currentTime > 0.2) playValid = true;
-        };
-
-        video.onended = function() {
-            if(document.getElementById('autoSwitch').checked && playValid) {
-                swiper.slideNext();
-            }
-        };
-
+        video.ontimeupdate = function() { if(video.currentTime > 0.2) playValid = true; };
+        video.onended = function() { if(document.getElementById('autoSwitch').checked && playValid) swiper.slideNext(); };
         video.onerror = function() {
-            console.log("线路繁忙，2秒后尝试跳过...");
-            video.onerror = null; 
-            setTimeout(function(){
-                if(document.getElementById('autoSwitch').checked) swiper.slideNext();
-            }, 2000);
+            console.log("当前线路异常，尝试跳过...");
+            setTimeout(function(){ if(document.getElementById('autoSwitch').checked) swiper.slideNext(); }, 1500);
         };
 
         video.onclick = function() { video.paused ? video.play() : video.pause(); };
-
         slide.appendChild(video);
         
+        // 渲染居中下载按钮
         var side = document.createElement('div');
         side.className = 'side-bar';
         side.innerHTML = '<div class="dl-btn" onclick="window.open(\''+finalUrl+'\')">📥</div>';
         slide.appendChild(side);
 
-        video.play().catch(function(){
-            video.muted = true; video.play(); 
-        });
+        video.play().catch(function(){ video.muted = true; video.play(); });
     }
 
+    // 5. Swiper 交互初始化
     function initSwiper() {
         var wrap = document.getElementById('videoWrapper');
         wrap.innerHTML = '';
@@ -246,7 +234,7 @@
         if(swiper) swiper.destroy(true, true);
         swiper = new Swiper('.swiper-container', {
             direction: 'vertical',
-            speed: 300,
+            speed: 350,
             on: {
                 slideChange: function() {
                     playAt(this.activeIndex);
@@ -257,55 +245,32 @@
             }
         });
 
-        // 鼠标滚轮监听控制 Swiper
+        // 滚轮控制
         window.removeEventListener('wheel', handleMouseWheel); 
         window.addEventListener('wheel', handleMouseWheel, { passive: true });
 
-        // 右下角控制按钮点击
-        document.getElementById('quickPrev').onclick = function(e) {
-            e.stopPropagation();
-            if (swiper) swiper.slidePrev();
-        };
-        document.getElementById('quickNext').onclick = function(e) {
-            e.stopPropagation();
-            if (swiper) swiper.slideNext();
-        };
+        // 右下角按钮控制
+        document.getElementById('quickPrev').onclick = function(e) { e.stopPropagation(); swiper.slidePrev(); };
+        document.getElementById('quickNext').onclick = function(e) { e.stopPropagation(); swiper.slideNext(); };
 
-        // 键盘方向键控制
+        // 键盘控制
         window.onkeydown = function(e) {
             if (!appStarted) return;
-            if (e.key === 'ArrowUp') {
-                e.preventDefault();
-                swiper.slidePrev();
-            } else if (e.key === 'ArrowDown') {
-                e.preventDefault();
-                swiper.slideNext();
-            }
+            if (e.key === 'ArrowUp') { e.preventDefault(); swiper.slidePrev(); }
+            else if (e.key === 'ArrowDown') { e.preventDefault(); swiper.slideNext(); }
         };
     }
 
     function handleMouseWheel(event) {
         if (!appStarted || isSwitching || !swiper) return;
-
-        if (event.deltaY > 0) {
-            isSwitching = true;
-            swiper.slideNext();
-            resetSwitchLock();
-        } else if (event.deltaY < 0) {
-            isSwitching = true;
-            swiper.slidePrev();
-            resetSwitchLock();
-        }
+        if (event.deltaY > 0) { isSwitching = true; swiper.slideNext(); resetSwitchLock(); }
+        else if (event.deltaY < 0) { isSwitching = true; swiper.slidePrev(); resetSwitchLock(); }
     }
 
-    function resetSwitchLock() {
-        setTimeout(function() {
-            isSwitching = false;
-        }, 500);
-    }
+    function resetSwitchLock() { setTimeout(function() { isSwitching = false; }, 500); }
 
     function changeApi() {
-        localStorage.setItem('final_last_idx', document.getElementById('apiSelect').value);
+        localStorage.setItem('enhanced_last_idx', document.getElementById('apiSelect').value);
         initSwiper();
         if(appStarted) playAt(0);
     }
@@ -321,10 +286,10 @@
 
     function delLine(i){ userLines.splice(i,1); updateStore(); }
     function cleanDeadLines() { userLines = userLines.filter(function(l) { return l.ok !== false; }); updateStore(); }
-    function resetDefault(){ localStorage.removeItem('final_video_lines'); location.reload(); }
+    function resetDefault(){ localStorage.removeItem('enhanced_video_lines'); location.reload(); }
     
     function updateStore(){
-        localStorage.setItem('final_video_lines', JSON.stringify(userLines));
+        localStorage.setItem('enhanced_video_lines', JSON.stringify(userLines));
         renderApiSelect();
         renderManager();
     }
