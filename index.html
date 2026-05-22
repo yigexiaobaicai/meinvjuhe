@@ -1,9 +1,9 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>聚合视频-50线全功能加固版</title>
+    <title>美女聚合视频</title>
     <link rel="stylesheet" href="https://unpkg.com/swiper/swiper-bundle.min.css">
     <style>
         body, html { margin: 0; padding: 0; height: 100%; background: #000; color: white; font-family: sans-serif; overflow: hidden; }
@@ -29,6 +29,42 @@
         .side-bar { position: absolute; right: 15px; bottom: 120px; z-index: 100; }
         .dl-btn { width: 45px; height: 45px; background: rgba(0,0,0,0.5); border-radius: 50%; display: flex; align-items: center; justify-content: center; border: 1px solid rgba(255,255,255,0.3); cursor: pointer; font-size: 20px; }
         
+        /* 新增：右下角固定悬浮控制按钮组 */
+        .video-fixed-buttons {
+            position: fixed;
+            bottom: 30px;
+            right: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            z-index: 1001; /* 确保层级高于一切组件 */
+        }
+        .video-fixed-buttons button {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            border: 1px solid rgba(255, 255, 255, 0.25);
+            background-color: rgba(0, 0, 0, 0.65);
+            color: #ffffff;
+            font-size: 18px;
+            cursor: pointer;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+            backdrop-filter: blur(3px);
+            transition: all 0.2s ease;
+        }
+        /* 桌面端悬浮回馈 */
+        .video-fixed-buttons button:hover {
+            background-color: rgba(255, 255, 255, 0.9);
+            color: #000000;
+            transform: scale(1.08);
+        }
+        .video-fixed-buttons button:active {
+            transform: scale(0.95);
+        }
+
         /* 解决自动播放限制的遮罩 */
         #startMask { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; z-index: 9999; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; }
         .loading-text { position: absolute; color: #444; font-size: 12px; z-index: 0; }
@@ -47,6 +83,12 @@
     <div class="auto-tag">
         <span>自动连播</span><input type="checkbox" id="autoSwitch" checked>
     </div>
+</div>
+
+<!-- 新增：桌面右下角上下切换视频按钮 -->
+<div class="video-fixed-buttons">
+    <button id="quickPrev" title="上一个视频">▲</button>
+    <button id="quickNext" title="下一个视频">▼</button>
 </div>
 
 <div id="managePanel">
@@ -96,6 +138,7 @@
 
     var userLines = JSON.parse(localStorage.getItem('final_video_lines')) || defaultData;
     var swiper, appStarted = false;
+    var isSwitching = false; // 新增：全局防抖锁，优化滚轮操作体验
 
     // 1. 界面渲染与线路检测 (保持功能)
     function renderApiSelect() {
@@ -219,7 +262,60 @@
                 }
             }
         });
+
+        // ================= 新增：交互事件融合绑定 =================
+        
+        // 1. 鼠标滚轮监听控制 Swiper 切换
+        window.removeEventListener('wheel', handleMouseWheel); // 防止重复初始化绑定
+        window.addEventListener('wheel', handleMouseWheel, { passive: true });
+
+        // 2. 右下角按钮点击控制 Swiper 切换
+        document.getElementById('quickPrev').onclick = function(e) {
+            e.stopPropagation();
+            if (swiper) swiper.slidePrev();
+        };
+        document.getElementById('quickNext').onclick = function(e) {
+            e.stopPropagation();
+            if (swiper) swiper.slideNext();
+        };
+
+        // 3. 顺便拓展键盘上下方向键控制
+        window.onkeydown = function(e) {
+            if (!appStarted) return;
+            if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                swiper.slidePrev();
+            } else if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                swiper.slideNext();
+            }
+        };
     }
+
+    // 新增：分离的鼠标滚轮核心控制函数
+    function handleMouseWheel(event) {
+        if (!appStarted || isSwitching || !swiper) return;
+
+        if (event.deltaY > 0) {
+            // 滚轮向下滚动 -> 播放下一个
+            isSwitching = true;
+            swiper.slideNext();
+            resetSwitchLock();
+        } else if (event.deltaY < 0) {
+            // 滚轮向上滚动 -> 播放上一个
+            isSwitching = true;
+            swiper.slidePrev();
+            resetSwitchLock();
+        }
+    }
+
+    // 新增：滚轮切歌频率防护锁（500ms冷静期）
+    function resetSwitchLock() {
+        setTimeout(function() {
+            isSwitching = false;
+        }, 500);
+    }
+    // =========================================================
 
     // 5. 管理功能与保存
     function changeApi() {
