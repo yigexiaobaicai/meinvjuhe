@@ -1,0 +1,253 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>聚合视频-50线全功能加固版</title>
+    <link rel="stylesheet" href="https://unpkg.com/swiper/swiper-bundle.min.css">
+    <style>
+        body, html { margin: 0; padding: 0; height: 100%; background: #000; color: white; font-family: sans-serif; overflow: hidden; }
+        .swiper-container { width: 100%; height: 100vh; }
+        .swiper-slide { position: relative; display: flex; align-items: center; justify-content: center; background: #000; }
+        video { width: 100%; height: 100%; object-fit: contain; cursor: pointer; z-index: 1; background: #000; }
+        
+        /* 顶部导航控制 */
+        .header-bar { position: fixed; top: 10px; left: 10px; z-index: 1000; display: flex; gap: 8px; flex-wrap: wrap; width: 95%; pointer-events: none; }
+        .header-bar * { pointer-events: auto; }
+        .api-selector { background: rgba(0,0,0,0.85); border: 1px solid #444; color: white; padding: 7px; border-radius: 6px; font-size: 13px; max-width: 140px; }
+        .btn-tool { background: rgba(255,255,255,0.2); border: 1px solid #777; color: white; padding: 6px 10px; border-radius: 6px; font-size: 12px; cursor: pointer; backdrop-filter: blur(5px); }
+        .auto-tag { background: rgba(0,0,0,0.6); padding: 5px 10px; border-radius: 20px; display: flex; align-items: center; gap: 6px; font-size: 11px; border: 1px solid #444; }
+
+        /* 管理面板 */
+        #managePanel { 
+            display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); 
+            background: #151515; border: 1px solid #333; padding: 20px; z-index: 2000; width: 85%; max-height: 70vh; overflow-y: auto; border-radius: 15px; box-shadow: 0 0 30px rgba(0,0,0,0.9);
+        }
+        .line-row { display: flex; justify-content: space-between; align-items: center; padding: 10px; border-bottom: 1px solid #222; font-size: 13px; }
+        
+        /* 侧边工具 */
+        .side-bar { position: absolute; right: 15px; bottom: 120px; z-index: 100; }
+        .dl-btn { width: 45px; height: 45px; background: rgba(0,0,0,0.5); border-radius: 50%; display: flex; align-items: center; justify-content: center; border: 1px solid rgba(255,255,255,0.3); cursor: pointer; font-size: 20px; }
+        
+        /* 解决自动播放限制的遮罩 */
+        #startMask { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; z-index: 9999; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; }
+        .loading-text { position: absolute; color: #444; font-size: 12px; z-index: 0; }
+    </style>
+</head>
+<body>
+
+<div id="startMask" onclick="startApp()">
+    <div style="font-size: 50px; animation: pulse 2s infinite;">🎬</div>
+    <p style="margin-top:20px; color:#aaa;">点击进入稳定播放模式</p>
+</div>
+
+<div class="header-bar">
+    <select class="api-selector" id="apiSelect" onchange="changeApi()"></select>
+    <button class="btn-tool" onclick="togglePanel(true)">⚙️ 线路管理</button>
+    <div class="auto-tag">
+        <span>自动连播</span><input type="checkbox" id="autoSwitch" checked>
+    </div>
+</div>
+
+<div id="managePanel">
+    <h3 style="margin-top:0">线路管理 (<span id="lineCount">0</span>)</h3>
+    <button class="btn-tool" style="background:#e74c3c; width:100%; margin-bottom:15px; border:none; padding:12px" onclick="cleanDeadLines()">一键清理失效线路</button>
+    <div id="lineContainer"></div>
+    <div style="margin-top:20px; display:flex; gap:10px">
+        <button class="btn-tool" style="flex:1" onclick="resetDefault()">重置系统</button>
+        <button class="btn-tool" style="flex:1; background:#444" onclick="togglePanel(false)">确认返回</button>
+    </div>
+</div>
+
+<div class="swiper-container">
+    <div class="swiper-wrapper" id="videoWrapper"></div>
+</div>
+
+<script src="https://unpkg.com/swiper/swiper-bundle.min.js"></script>
+<script>
+    // 线路数据完全保留
+    var defaultData = [
+        {name:"JK视频", url:"https://api.suyanw.cn/api/jksp.php"}, {name:"JK(源2)", url:"https://api.mmp.cc/api/ksvideo?type=mp4&id=jk"},
+        {name:"真人小姐姐", url:"https://api.yujn.cn/api/zzxjj.php?type=video"}, {name:"小哥哥", url:"http://api.yujn.cn/api/xgg.php?type=video"},
+        {name:"热舞1", url:"http://api.yujn.cn/api/rewu.php?type=video"}, {name:"热舞2", url:"https://api.mmp.cc/api/ksvideo?type=mp4&id=ReWu"},
+        {name:"变装秀", url:"http://api.yujn.cn/api/bianzhuang.php"}, {name:"白丝1", url:"http://api.yujn.cn/api/baisis.php?type=video"},
+        {name:"白丝2", url:"https://api.mmp.cc/api/ksvideo?type=mp4&id=BaiSi"}, {name:"黑丝1", url:"http://api.yujn.cn/api/heisis.php?type=video"},
+        {name:"黑丝2", url:"https://api.mmp.cc/api/ksvideo?type=mp4&id=HeiSi"}, {name:"甜美1", url:"http://api.yujn.cn/api/tianmei.php?type=video"},
+        {name:"甜美2", url:"https://api.mmp.cc/api/ksvideo?type=mp4&id=TianMei"}, {name:"精选小姐姐", url:"https://api.yujn.cn/api/xjj.php?type=video"},
+        {name:"萝莉1", url:"http://api.yujn.cn/api/luoli.php?type=video"}, {name:"萝莉2", url:"https://api.mmp.cc/api/ksvideo?type=mp4&id=LuoLi"},
+        {name:"快手小姐姐", url:"http://api.yujn.cn/api/ksxjjsp.php"}, {name:"高质量推荐", url:"https://api.mmp.cc/api/ksvideo?type=mp4&id=GaoZhiLiangXiaoJieJie"},
+        {name:"时尚穿搭", url:"https://api.mmp.cc/api/ksvideo?type=mp4&id=ChuanDa"}, {name:"古风汉服", url:"https://api.mmp.cc/api/ksvideo?type=mp4&id=HanFu"},
+        {name:"视觉变装", url:"https://api.mmp.cc/api/ksvideo?type=mp4&id=BianZhuang"}, {name:"女大生活", url:"https://api.mmp.cc/api/ksvideo?type=mp4&id=NvDa"},
+        {name:"清纯风", url:"https://api.mmp.cc/api/ksvideo?type=mp4&id=QingCun"}, {name:"街拍美女", url:"https://api.yujn.cn/api/jiepai.php?type=video"},
+        {name:"颜值达人", url:"https://api.yujn.cn/api/yanzhi.php?type=video"}, {name:"职场装", url:"https://api.mmp.cc/api/ksvideo?type=mp4&id=OL"},
+        {name:"旗袍控", url:"https://api.mmp.cc/api/ksvideo?type=mp4&id=QiPao"}, {name:"牛仔裤控", url:"https://api.mmp.cc/api/ksvideo?type=mp4&id=NiuZaiKu"},
+        {name:"御姐风", url:"https://api.mmp.cc/api/ksvideo?type=mp4&id=YuJie"}, {name:"气质女神", url:"https://api.mmp.cc/api/ksvideo?type=mp4&id=QiZhi"},
+        {name:"夜店热舞", url:"https://api.mmp.cc/api/ksvideo?type=mp4&id=YeDian"}, {name:"抖音精选", url:"https://api.paugram.com/video/"},
+        {name:"运动健身", url:"https://api.mmp.cc/api/ksvideo?type=mp4&id=YunDong"}, {name:"长裙仙女", url:"https://api.mmp.cc/api/ksvideo?type=mp4&id=ChangQun"},
+        {name:"二次元ACG", url:"https://api.mmp.cc/api/ksvideo?type=mp4&id=ACG"}, {name:"丝袜频道", url:"https://api.mmp.cc/api/ksvideo?type=mp4&id=SiWa"},
+        {name:"顶级高质量", url:"https://api.mmp.cc/api/ksvideo?type=mp4&id=GaoZhiLiang"}, {name:"慢动作美感", url:"https://api.mmp.cc/api/ksvideo?type=mp4&id=ManDongZuo"},
+        {name:"长腿控", url:"https://api.mmp.cc/api/ksvideo?type=mp4&id=ChangTui"}, {name:"双马尾", url:"https://api.mmp.cc/api/ksvideo?type=mp4&id=ShuangMaWei"},
+        {name:"快手热门", url:"https://v.api.aa1.cn/api/api-video-ks/index.php"}, {name:"清纯风2", url:"http://api.yujn.cn/api/qingchun.php"},
+        {name:"穿搭风2", url:"http://api.yujn.cn/api/chuanda.php"}, {name:"汉服秀2", url:"http://api.yujn.cn/api/hanfu.php"},
+        {name:"自拍小姐姐", url:"https://api.mmp.cc/api/ksvideo?type=mp4&id=ZiPai"}, {name:"清纯校花", url:"https://api.mmp.cc/api/ksvideo?type=mp4&id=XiaoYuan"},
+        {name:"皮衣控", url:"https://api.mmp.cc/api/ksvideo?type=mp4&id=PiYi"}, {name:"萌妹子", url:"https://api.mmp.cc/api/ksvideo?type=mp4&id=MengMeiZi"},
+        {name:"随机网易视频", url:"https://api.uomg.com/api/rand.music?sort=美女&format=mp4"}, {name:"颜值自拍", url:"https://api.uomg.com/api/rand.imgurl?sort=美女"}
+    ];
+
+    var userLines = JSON.parse(localStorage.getItem('final_video_lines')) || defaultData;
+    var swiper, appStarted = false;
+
+    // 1. 界面渲染与线路检测 (保持功能)
+    function renderApiSelect() {
+        var sel = document.getElementById('apiSelect');
+        var current = localStorage.getItem('final_last_idx') || 'MIX';
+        sel.innerHTML = '<option value="MIX">🌟 聚合全线路随机</option>';
+        userLines.forEach(function(item, i) {
+            var mark = item.ok === true ? '√ ' : (item.ok === false ? 'X ' : '? ');
+            sel.add(new Option(mark + item.name, i, false, current == i));
+        });
+        document.getElementById('lineCount').innerText = userLines.length;
+    }
+
+    function checkLines() {
+        userLines.forEach(function(item, index) {
+            if(item.ok !== undefined) return;
+            var v = document.createElement('video');
+            v.src = item.url;
+            v.onloadedmetadata = function() { userLines[index].ok = true; renderApiSelect(); v.remove(); };
+            v.onerror = function() { userLines[index].ok = false; renderApiSelect(); v.remove(); };
+            setTimeout(function(){ v.remove(); }, 6000); 
+        });
+    }
+
+    // 2. 启动逻辑
+    function startApp() {
+        document.getElementById('startMask').style.display = 'none';
+        appStarted = true;
+        playAt(0); 
+    }
+
+    // 3. 核心播放函数 (重点优化：防黑屏、防频闪)
+    function playAt(index) {
+        if(!appStarted) return;
+        
+        // 彻底切断所有旧视频的连接和监听
+        document.querySelectorAll('video').forEach(function(v){
+            v.pause();
+            v.onplay = v.onended = v.onerror = v.ontimeupdate = null;
+            v.src = ""; 
+            v.load(); 
+            v.remove();
+        });
+
+        var slide = swiper.slides[index];
+        if(!slide) return;
+
+        // 获取当前地址
+        var selVal = document.getElementById('apiSelect').value;
+        var base = (selVal === 'MIX') ? userLines[Math.floor(Math.random()*userLines.length)].url : userLines[selVal].url;
+        var finalUrl = base + (base.indexOf('?') > -1 ? '&' : '?') + 'rd=' + Date.now();
+
+        slide.innerHTML = '<div class="loading-text">资源缓冲中...</div>';
+        
+        var video = document.createElement('video');
+        video.src = finalUrl;
+        video.playsInline = true;
+        video.webkitPlaysinline = true;
+        video.autoplay = true;
+        video.setAttribute('x5-video-player-type', 'h5-page'); // 适配部分手机内核
+
+        // 状态保护变量
+        var playValid = false; 
+
+        // 只有画面真的动了，才允许“自动连播”
+        video.ontimeupdate = function() {
+            if(video.currentTime > 0.2) playValid = true;
+        };
+
+        video.onended = function() {
+            if(document.getElementById('autoSwitch').checked && playValid) {
+                swiper.slideNext();
+            }
+        };
+
+        // 报错处理：增加冷静期
+        video.onerror = function() {
+            console.log("线路繁忙，2秒后尝试跳过...");
+            video.onerror = null; 
+            setTimeout(function(){
+                if(document.getElementById('autoSwitch').checked) swiper.slideNext();
+            }, 2000);
+        };
+
+        video.onclick = function() { video.paused ? video.play() : video.pause(); };
+
+        slide.appendChild(video);
+        
+        // 下载/查看按钮
+        var side = document.createElement('div');
+        side.className = 'side-bar';
+        side.innerHTML = '<div class="dl-btn" onclick="window.open(\''+finalUrl+'\')">📥</div>';
+        slide.appendChild(side);
+
+        video.play().catch(function(){
+            video.muted = true; video.play(); // 尝试静音播，解决权限问题
+        });
+    }
+
+    // 4. Swiper 初始化
+    function initSwiper() {
+        var wrap = document.getElementById('videoWrapper');
+        wrap.innerHTML = '';
+        for(var i=0; i<15; i++) {
+            var s = document.createElement('div');
+            s.className = 'swiper-slide';
+            wrap.appendChild(s);
+        }
+
+        if(swiper) swiper.destroy(true, true);
+        swiper = new Swiper('.swiper-container', {
+            direction: 'vertical',
+            speed: 300,
+            on: {
+                slideChange: function() {
+                    playAt(this.activeIndex);
+                    // 动态补位
+                    if(this.activeIndex >= this.slides.length - 3) {
+                        for(var j=0; j<5; j++) this.appendSlide('<div class="swiper-slide"></div>');
+                    }
+                }
+            }
+        });
+    }
+
+    // 5. 管理功能与保存
+    function changeApi() {
+        localStorage.setItem('final_last_idx', document.getElementById('apiSelect').value);
+        initSwiper();
+        if(appStarted) playAt(0);
+    }
+
+    function togglePanel(s){ document.getElementById('managePanel').style.display=s?'block':'none'; if(s)renderManager();}
+    
+    function renderManager(){ 
+        document.getElementById('lineContainer').innerHTML = userLines.map(function(l,i){
+            var status = l.ok === true ? '<span style="color:#27ae60">√</span>' : (l.ok === false ? '<span style="color:#e74c3c">X</span>' : '...');
+            return '<div class="line-row"><span>'+status+' '+l.name+'</span><button onclick="delLine('+i+')" style="color:#e74c3c;border:none;background:none;cursor:pointer">删除</button></div>';
+        }).join('');
+    }
+
+    function delLine(i){ userLines.splice(i,1); updateStore(); }
+    function cleanDeadLines() { userLines = userLines.filter(function(l) { return l.ok !== false; }); updateStore(); }
+    function resetDefault(){ localStorage.removeItem('final_video_lines'); location.reload(); }
+    
+    function updateStore(){
+        localStorage.setItem('final_video_lines', JSON.stringify(userLines));
+        renderApiSelect();
+        renderManager();
+    }
+
+    window.onload = function() { renderApiSelect(); checkLines(); initSwiper(); };
+</script>
+</body>
+</html>
